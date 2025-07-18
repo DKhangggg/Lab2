@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orchids - Orchid Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .search-form {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .search-form input, .search-form select {
+            padding: 8px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .search-form button {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .orchid-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .orchid-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            background-color: white;
+        }
+        .orchid-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+            display: block;
+        }
+        .orchid-card .no-image {
+            width: 100%;
+            height: 200px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .orchid-card h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .orchid-card p {
+            color: #666;
+            margin: 5px 0;
+        }
+        .price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            color: white;
+        }
+        .badge-natural {
+            background-color: #28a745;
+        }
+        .badge-artificial {
+            background-color: #6c757d;
+        }
+        .no-results {
+            text-align: center;
+            color: #666;
+            margin: 50px 0;
+        }
+        .btn-order {
+            background-color: #28a745;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .btn-order:hover {
+            background-color: #218838;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Orchid Shop</h1>
+        <div class="nav">
+            <a href="/orchids">Home</a>
+            <a href="/orders/my-orders">My Orders</a>
+            <span th:if="${loggedInUser.role.roleName == 'ROLE_ADMIN'}">
+                <a href="/admin">Admin Panel</a>
+            </span>
+            <a href="/logout" style="float: right;">Logout</a>
+            <span style="float: right; margin-right: 15px;" th:text="'Welcome, ' + ${loggedInUser.accountName}"></span>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="search-form">
+        <form th:action="@{/orchids}" method="get">
+            <input type="text" name="search" placeholder="Search orchids..." th:value="${searchQuery}">
+            
+            <select name="categoryId">
+                <option value="">All Categories</option>
+                <option th:each="category : ${categories}" 
+                        th:value="${category.categoryId}" 
+                        th:text="${category.categoryName}"
+                        th:selected="${category.categoryId == selectedCategoryId}">
+                </option>
+            </select>
+            
+            <button type="submit">Search</button>
+            <a href="/orchids" style="margin-left: 10px;">Clear</a>
+        </form>
+    </div>
+
+    <!-- Orchids Grid -->
+    <div th:if="${!orchids.empty}" class="orchid-grid">
+        <div th:each="orchid : ${orchids}" class="orchid-card">
+            <!-- Image with fallback -->
+            <div th:if="${orchid.url != null and !orchid.url.isEmpty()}">
+                <img th:src="${orchid.url}" th:alt="${orchid.name}"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="no-image" style="display: none;">No Image Available</div>
+            </div>
+            <div th:unless="${orchid.url != null and !orchid.url.isEmpty()}" class="no-image">
+                No Image Available
+            </div>
+
+            <h3 th:text="${orchid.name}">Orchid Name</h3>
+
+            <p th:text="${orchid.description}">Description</p>
+
+            <p>
+                <span class="badge"
+                      th:classappend="${orchid.is_natural} ? 'badge-natural' : 'badge-artificial'"
+                      th:text="${orchid.is_natural} ? 'Natural' : 'Artificial'">
+                </span>
+
+                <span th:text="'Category: ' + ${orchid.category.categoryName}"></span>
+            </p>
+
+            <p class="price" th:text="'$' + ${orchid.price}">$0.00</p>
+
+            <!-- Add to Order Button -->
+            <form th:action="@{/orders/add}" method="post" style="margin-top: 10px;">
+                <input type="hidden" name="orchidId" th:value="${orchid.orchidId}">
+                <input type="number" name="quantity" value="1" min="1" max="10"
+                       style="width: 60px; padding: 4px; margin-right: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                <button type="submit" class="btn-order">Add to Order</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- No Results -->
+    <div th:if="${orchids.empty}" class="no-results">
+        <h3>No orchids found</h3>
+        <p>Try adjusting your search criteria.</p>
+    </div>
+</body>
+</html>

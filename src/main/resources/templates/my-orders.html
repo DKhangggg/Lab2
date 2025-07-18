@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Orders - Orchid Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .order-card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background-color: white;
+        }
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .order-id {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .order-date {
+            color: #666;
+            font-size: 14px;
+        }
+        .order-status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: white;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .status-pending {
+            background-color: #ffc107;
+        }
+        .status-completed {
+            background-color: #28a745;
+        }
+        .status-cancelled {
+            background-color: #dc3545;
+        }
+        .order-total {
+            font-size: 18px;
+            font-weight: bold;
+            color: #28a745;
+        }
+        .order-items {
+            margin-top: 15px;
+        }
+        .order-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .item-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 15px;
+            background-color: #f8f9fa;
+        }
+        .no-image-small {
+            width: 60px;
+            height: 60px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 10px;
+            text-align: center;
+        }
+        .item-info {
+            flex: 1;
+        }
+        .item-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .item-details {
+            color: #666;
+            font-size: 14px;
+        }
+        .item-price {
+            text-align: right;
+            font-weight: bold;
+        }
+        .view-details-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        .view-details-btn:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        .no-orders {
+            text-align: center;
+            color: #666;
+            margin: 50px 0;
+        }
+        .alert {
+            padding: 10px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .alert-error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>My Orders</h1>
+        <div class="nav">
+            <a href="/orchids">Home</a>
+            <a href="/orders/my-orders">My Orders</a>
+            <span th:if="${loggedInUser.role.roleName == 'ROLE_ADMIN'}">
+                <a href="/admin">Admin Panel</a>
+            </span>
+            <a href="/logout" style="float: right;">Logout</a>
+            <span style="float: right; margin-right: 15px;" th:text="'Welcome, ' + ${loggedInUser.accountName}"></span>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+    <!-- Orders List -->
+    <div th:if="${!orders.empty}">
+        <div th:each="order : ${orders}" class="order-card">
+            <div class="order-header">
+                <div>
+                    <div class="order-id">Order #<span th:text="${order.orderId}">123</span></div>
+                    <div class="order-date" th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd HH:mm')}">2024-01-01 10:00</div>
+                </div>
+                <div>
+                    <span class="order-status" 
+                          th:classappend="${order.orderStatus == 'pending'} ? 'status-pending' : 
+                                         (${order.orderStatus == 'completed'} ? 'status-completed' : 'status-cancelled')"
+                          th:text="${order.orderStatus}">
+                    </span>
+                </div>
+                <div class="order-total">$<span th:text="${order.totalAmount}">0.00</span></div>
+            </div>
+            
+            <!-- Order Items -->
+            <div class="order-items">
+                <div th:each="detail : ${order.orderDetailList}" class="order-item">
+                    <!-- Image with fallback -->
+                    <div th:if="${detail.orchid.url != null and !detail.orchid.url.isEmpty()}">
+                        <img th:src="${detail.orchid.url}" th:alt="${detail.orchid.name}" class="item-image"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="no-image-small" style="display: none;">No Image</div>
+                    </div>
+                    <div th:unless="${detail.orchid.url != null and !detail.orchid.url.isEmpty()}" class="no-image-small">
+                        No Image
+                    </div>
+                    
+                    <div class="item-info">
+                        <div class="item-name" th:text="${detail.orchid.name}">Orchid Name</div>
+                        <div class="item-details">
+                            <span th:text="'Quantity: ' + ${detail.quantity}">Quantity: 1</span> | 
+                            <span th:text="'Category: ' + ${detail.orchid.category.categoryName}">Category</span> |
+                            <span th:text="${detail.orchid.is_natural} ? 'Natural' : 'Artificial'">Type</span>
+                        </div>
+                    </div>
+                    
+                    <div class="item-price">
+                        $<span th:text="${detail.price * detail.quantity}">0.00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <a th:href="@{/orders/{id}(id=${order.orderId})}" class="view-details-btn">View Details</a>
+        </div>
+    </div>
+
+    <!-- No Orders -->
+    <div th:if="${orders.empty}" class="no-orders">
+        <h3>No orders found</h3>
+        <p>You haven't placed any orders yet.</p>
+        <a href="/orchids" style="color: #007bff; text-decoration: none;">Start Shopping →</a>
+    </div>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Details - Orchid Shop</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .header {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            color: #007bff;
+            text-decoration: none;
+            margin-right: 15px;
+        }
+        .order-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
+        .order-info h3 {
+            margin-top: 0;
+        }
+        .order-items {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .order-item {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+        .order-item:last-child {
+            border-bottom: none;
+        }
+        .item-image {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 15px;
+            background-color: #f8f9fa;
+        }
+        .no-image-small {
+            width: 80px;
+            height: 80px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 10px;
+            text-align: center;
+        }
+        .item-details {
+            flex: 1;
+        }
+        .item-details h4 {
+            margin: 0 0 5px 0;
+        }
+        .item-details p {
+            margin: 0;
+            color: #666;
+        }
+        .item-price {
+            text-align: right;
+            font-weight: bold;
+        }
+        .total {
+            background-color: #f8f9fa;
+            padding: 15px;
+            text-align: right;
+            font-size: 18px;
+            font-weight: bold;
+            border-top: 2px solid #007bff;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            color: white;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .status-pending {
+            background-color: #ffc107;
+        }
+        .status-completed {
+            background-color: #28a745;
+        }
+        .status-cancelled {
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Order Details</h1>
+        <div class="nav">
+            <a href="/orchids">Home</a>
+            <span th:if="${loggedInUser.role.roleName == 'ROLE_ADMIN'}">
+                <a href="/admin">Admin Panel</a>
+            </span>
+            <a href="/logout" style="float: right;">Logout</a>
+            <span style="float: right; margin-right: 15px;" th:text="'Welcome, ' + ${loggedInUser.accountName}"></span>
+        </div>
+    </div>
+
+    <!-- Order Information -->
+    <div class="order-info">
+        <h3>Order #<span th:text="${order.orderId}">123</span></h3>
+        <p><strong>Customer:</strong> <span th:text="${order.account.accountName}">Customer Name</span></p>
+        <p><strong>Email:</strong> <span th:text="${order.account.email}">email@example.com</span></p>
+        <p><strong>Order Date:</strong> <span th:text="${#temporals.format(order.orderDate, 'yyyy-MM-dd HH:mm')}">2024-01-01 10:00</span></p>
+        <p><strong>Status:</strong> 
+            <span class="status-badge" 
+                  th:classappend="${order.orderStatus == 'pending'} ? 'status-pending' : 
+                                 (${order.orderStatus == 'completed'} ? 'status-completed' : 'status-cancelled')"
+                  th:text="${order.orderStatus}">
+            </span>
+        </p>
+    </div>
+
+    <!-- Order Items -->
+    <div class="order-items">
+        <div th:each="detail : ${orderDetails}" class="order-item">
+            <!-- Image with fallback -->
+            <div th:if="${detail.orchid.url != null and !detail.orchid.url.isEmpty()}">
+                <img th:src="${detail.orchid.url}" th:alt="${detail.orchid.name}" class="item-image"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="no-image-small" style="display: none;">No Image</div>
+            </div>
+            <div th:unless="${detail.orchid.url != null and !detail.orchid.url.isEmpty()}" class="no-image-small">
+                No Image
+            </div>
+
+            <div class="item-details">
+                <h4 th:text="${detail.orchid.name}">Orchid Name</h4>
+                <p th:text="${detail.orchid.description}">Description</p>
+                <p><strong>Category:</strong> <span th:text="${detail.orchid.category.categoryName}">Category</span></p>
+                <p><strong>Type:</strong>
+                    <span th:text="${detail.orchid.is_natural} ? 'Natural' : 'Artificial'">Type</span>
+                </p>
+                <p><strong>Quantity:</strong> <span th:text="${detail.quantity}">1</span></p>
+            </div>
+
+            <div class="item-price">
+                <p><strong>Unit Price:</strong> $<span th:text="${detail.price}">0.00</span></p>
+                <p><strong>Subtotal:</strong> $<span th:text="${detail.price * detail.quantity}">0.00</span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total -->
+    <div class="total">
+        <strong>Total Amount: $<span th:text="${order.totalAmount}">0.00</span></strong>
+    </div>
+
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="/orchids" style="color: #007bff; text-decoration: none;">← Back to Orchids</a>
+    </div>
+</body>
+</html>
